@@ -1,0 +1,84 @@
+---
+title: GLiNER
+description: Configure GLiNER models, checkpoints, confidence floors, and offline operation
+---
+
+[GLiNER](https://github.com/urchade/GLiNER) is PasteGuard's default and currently
+only semantic backend. It detects `PERSON` and `LOCATION`; street addresses are
+also returned as `LOCATION`.
+
+The default model is `urchade/gliner_multi_pii-v1`.
+
+```bash
+DETECTOR_MODEL=urchade/gliner_small-v2.1 \
+.venv/bin/uvicorn detector.app:app --host 0.0.0.0 --port 5002
+```
+
+`DETECTOR_MODEL` accepts a Hugging Face model ID or local directory. Hub models
+must contain `gliner_config.json`; private models require Hugging Face
+authentication.
+
+<Warning>
+Custom models have different accuracy and confidence calibration. Test them
+against your data before production.
+</Warning>
+
+## Local Models
+
+Local directories need:
+
+```text
+custom-gliner/
+├── gliner_config.json
+└── model.safetensors
+```
+
+`pytorch_model.bin` is also accepted. Missing or invalid files fail during
+startup.
+
+<Note>
+Offline deployments must also cache any tokenizer or encoder referenced by
+`gliner_config.json`.
+</Note>
+
+## Docker
+
+The image includes the default model and runs offline. For a custom Hub model,
+enable downloads on first start and persist the cache:
+
+```bash
+docker volume create pasteguard-models
+
+docker run --rm -p 3000:3000 \
+  -e DETECTOR_MODEL=urchade/gliner_small-v2.1 \
+  -e HF_HUB_OFFLINE=0 \
+  -e TRANSFORMERS_OFFLINE=0 \
+  -e PASTEGUARD_STARTUP_TIMEOUT=600 \
+  -v pasteguard-models:/opt/models \
+  ghcr.io/sgasser/pasteguard:latest
+```
+
+For a local model, mount the directory and use its container path:
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e DETECTOR_MODEL=/models/custom-gliner \
+  -v /absolute/path/to/custom-gliner:/models/custom-gliner:ro \
+  ghcr.io/sgasser/pasteguard:latest
+```
+
+## Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GLINER_FLOOR_PERSON` | `0.95` | Minimum confidence for person detections |
+| `GLINER_FLOOR_LOCATION` | `0.80` | Minimum confidence for location detections |
+| `GLINER_FLOOR_ADDRESS` | `0.80` | Minimum confidence for street-address detections |
+| `GLINER_MAX_TOKENS` | `384` | Maximum model tokens per input window; must be at least `64` |
+
+Floors must be between `0` and `1`. The request `score_threshold` can raise, but
+not lower, them.
+
+Legacy `DETECTOR_MODEL_PATH`, `DETECTOR_FLOOR_*`, and `DETECTOR_MAX_TOKENS`
+remain supported. `DETECTOR_MODEL_PATH` wins over `DETECTOR_MODEL`; `GLINER_*`
+wins over matching legacy variables.

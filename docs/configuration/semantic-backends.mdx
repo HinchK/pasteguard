@@ -1,0 +1,47 @@
+---
+title: Semantic Backends
+description: Select and verify the semantic detector backend
+---
+
+PasteGuard's detector combines two independent layers:
+
+- The **deterministic layer** validates structured values such as email addresses,
+  phone numbers, credit cards, IBANs, IP addresses, and VAT numbers.
+- The **semantic backend** detects names, locations, and street addresses.
+
+Changing the backend does not affect deterministic detection.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DETECTOR_BACKEND` | `gliner` | Semantic backend to load |
+| `DETECTOR_MODEL` | Backend default | Model identifier or local model directory |
+
+GLiNER is currently the only supported backend. Unknown backends and invalid
+models fail during startup. See [GLiNER](/configuration/gliner) for model and
+tuning options.
+
+## Verify the Backend
+
+Query the detector directly:
+
+```bash
+curl http://localhost:5002/health
+```
+
+```json
+{
+  "status": "ok",
+  "backend": "gliner",
+  "model": "urchade/gliner_multi_pii-v1"
+}
+```
+
+For local checkpoints, `model` is the resolved path.
+
+<Note>
+The proxy health endpoint on port `3000` reports detector availability. Backend
+identity is available from the detector health endpoint on port `5002`.
+</Note>
+
+The detector loads one model at startup. Restart it after changing backend or
+model settings.

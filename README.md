@@ -102,7 +102,9 @@ client = OpenAI(base_url="http://localhost:3000/openai/v1")
 
 Both `client.chat.completions.create(...)` and `client.responses.create(...)` pass through PasteGuard's privacy pipeline.
 
-For custom config, persistent logs, Docker Compose, or detector settings: **[Read the docs](https://pasteguard.com/docs/installation)**.
+For custom config, persistent logs, Docker Compose, or
+[custom GLiNER models](https://pasteguard.com/docs/configuration/gliner):
+**[Read the docs](https://pasteguard.com/docs/installation)**.
 
 ## Privacy Modes
 
@@ -140,9 +142,9 @@ Every request is logged with masking details. See what was detected, what was ma
 
 ## How Detection Works
 
-Detection runs as a separate service that PasteGuard calls over HTTP, so you can run it wherever you like. It combines deterministic checks and checksums for structured values with a small AI model ([GLiNER](https://github.com/urchade/GLiNER)) for names and places.
-
-Code, Docker image, and tests are in [`detector/`](detector/).
+The detector combines checksums and format checks for structured values with a
+semantic backend for names and places. GLiNER is currently the only backend.
+See [Semantic Backends](https://pasteguard.com/docs/configuration/semantic-backends).
 
 ## Tech Stack
 
